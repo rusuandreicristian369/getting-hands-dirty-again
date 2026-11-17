@@ -10,13 +10,13 @@ async function bootstrap() {
     logger: ['log'],
   });
 
-  const configService = app.get<ConfigType<typeof appConfig>>(appConfig.KEY)
-  const logger = new Logger("bootstrap")
+  const configService = app.get<ConfigType<typeof appConfig>>(appConfig.KEY);
+  const logger = new Logger('bootstrap');
 
   await app.listen(configService.port, () => {
-    logger.log(`Started listening on ${configService.port}`)
+    logger.log(`Started listening on ${configService.port}`);
   });
 
-  app.enableShutdownHooks()
+  app.enableShutdownHooks();
 }
 await bootstrap();

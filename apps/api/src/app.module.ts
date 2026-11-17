@@ -11,7 +11,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [appConfig]
+      load: [appConfig],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule.forFeature(appConfig)],
@@ -25,9 +25,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
           database: config.typeorm.database,
           password: config.typeorm.password,
           entities: [],
-          synchronize: process.env.NODE_ENV !== "production"
-        }
-      }
+          synchronize: process.env.NODE_ENV !== 'production',
+        };
+      },
     }),
     ObserveModule.forRoot({
       appKey: process.env.OBSERVE_APP_KEY,
@@ -40,4 +40,4 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

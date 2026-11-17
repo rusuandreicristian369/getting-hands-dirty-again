@@ -1,20 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DataSource } from 'typeorm'
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class AppService {
-  private readonly logger = new Logger(this.constructor.name)
+  private readonly logger = new Logger(this.constructor.name);
 
-  constructor(
-    private readonly dataSource: DataSource
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
 
   async getHello(): Promise<string> {
-    this.logger.log("Hello!")
+    this.logger.log('Hello!');
 
-    const result = await this.dataSource.query("SELECT 1")
+    const result = await this.dataSource.query('SELECT 1');
 
-    console.log({result})
+    console.log({ result });
 
     return 'Hello World!';
   }
