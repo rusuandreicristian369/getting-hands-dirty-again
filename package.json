@@ -1,0 +1,14 @@
+{
+  "name": "my-ecommerce-exercise",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "infra:up": "cd infrastructure && docker-compose up -d",
+    "infra:down": "cd infrastructure && docker-compose down -v"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
