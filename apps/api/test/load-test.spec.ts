@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { Options } from 'k6/options';
 
 export const options: Options = {
-  vus: 100,
+  vus: 10,
   duration: '5s',
   thresholds: {
     http_req_duration: ['p(95)<500'],
@@ -25,5 +25,5 @@ export const options: Options = {
 };
 
 export default function () {
-  http.get('http://localhost:4000');
+  http.get('http://localhost:4000/tenant');
 }

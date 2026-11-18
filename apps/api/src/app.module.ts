@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import { createObserveModule } from '@nestjs/observe';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PoolOptions } from 'mysql2';
 import appConfig from './app.config.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -28,7 +29,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
           password: config.typeorm.password,
           entities: [Tenant],
           synchronize: process.env.NODE_ENV !== 'production',
+          extra: {
 
+          } as PoolOptions
         };
       },
     }),

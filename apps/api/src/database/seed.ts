@@ -4,8 +4,17 @@ import { NestFactory } from "@nestjs/core"
 import { DataSource } from "typeorm"
 import { AppModule } from "../app.module.js"
 import { Tenant } from "../tenant/entities/tenant.entity.js"
+import { withTime } from "../utils/performance.js"
 
 const types = ["seed", "clean"]
+
+const CONFIG = {
+    batchSize: 10000,
+
+    tenants: {
+        count: 1000000
+    }
+}
 
 async function seed(app: INestApplicationContext) {
     const dataSource = app.get(DataSource)
@@ -14,14 +23,26 @@ async function seed(app: INestApplicationContext) {
 
     await clean(app)
 
-    await dataSource.transaction(async (manager) => {
-        logger.log("Creating tenants...")
+    const { time } = await withTime(async () => {
+        await dataSource.transaction(async (manager) => {
+            logger.log("Creating tenants...")
 
-        const tenants = new Array(100).fill(null).map(() => manager.create(Tenant, {
-            name: faker.person.fullName()
-        }))
-        await manager.save(tenants)
+
+            for (let done = 0; done < CONFIG.tenants.count; done += CONFIG.batchSize) {
+                const size = Math.min(CONFIG.batchSize, CONFIG.tenants.count - CONFIG.batchSize)
+
+                const tenants = new Array(size).fill(null).map(() => manager.create(Tenant, {
+                    name: faker.person.fullName()
+                }))
+                await manager.insert(Tenant, tenants)
+            }
+
+        })
     })
+    logger.debug(`Seeding took: ${time}s`)
+
+
+    logger.log("Done the seed!")
 }
 
 async function clean(app: INestApplicationContext) {
@@ -56,7 +77,7 @@ async function bootstrap() {
     }
 
     const app = await NestFactory.createApplicationContext(AppModule, {
-        logger: ['log']
+        logger: ['log', 'debug']
     })
 
     const logger = new Logger()
