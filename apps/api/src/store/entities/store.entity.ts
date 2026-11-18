@@ -1,4 +1,5 @@
-import { Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Product } from "../../product/entities/product.entity.js";
 import { Tenant } from "../../tenant/entities/tenant.entity.js";
 
 @Entity({ name: "stores" })
@@ -10,8 +11,9 @@ export class Store {
         nullable: false,
         onDelete: 'CASCADE',
     })
-    @JoinColumn({
-        name: "tenant_id"
-    })
+    @JoinColumn()
     tenant: Tenant
+
+    @OneToMany(() => Product, p => p.store)
+    products: Product[]
 }

@@ -6,6 +6,8 @@ import { PoolOptions } from 'mysql2';
 import appConfig from './app.config.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { Product } from './product/entities/product.entity.js';
+import { ProductModule } from './product/product.module.js';
 import { Store } from './store/entities/store.entity.js';
 import { StoreModule } from './store/store.module.js';
 import { Tenant } from './tenant/entities/tenant.entity.js';
@@ -29,7 +31,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
           username: config.typeorm.username,
           database: config.typeorm.database,
           password: config.typeorm.password,
-          entities: [Tenant, Store],
+          entities: [Tenant, Store, Product],
           synchronize: process.env.NODE_ENV !== 'production',
           extra: {
 
@@ -46,6 +48,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
     TenantModule,
     StoreModule,
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],
