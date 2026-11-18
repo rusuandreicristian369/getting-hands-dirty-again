@@ -28,6 +28,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
           password: config.typeorm.password,
           entities: [Tenant],
           synchronize: process.env.NODE_ENV !== 'production',
+
         };
       },
     }),
