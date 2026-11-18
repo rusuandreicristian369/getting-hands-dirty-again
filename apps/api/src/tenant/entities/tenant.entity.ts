@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Store } from '../../store/entities/store.entity.js';
 
 @Entity({ name: "tenants" })
 export class Tenant {
@@ -7,4 +8,7 @@ export class Tenant {
 
     @Column({ type: "varchar", length: 255 })
     name: string
+
+    @OneToOne(() => Store, s => s.tenant)
+    store?: Store | null
 }

@@ -37,7 +37,7 @@ async function seed(app: INestApplicationContext) {
 
             for (const size of batch(CONFIG.tenants.count)) {
                 const tenants = new Array(size).fill(null).map(() => manager.create(Tenant, {
-                    name: faker.person.fullName()
+                    name: faker.person.fullName(),
                 }))
                 await manager.insert(Tenant, tenants)
             }

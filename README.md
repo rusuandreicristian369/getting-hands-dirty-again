@@ -10,6 +10,15 @@ I will come back and update this as I progress.
 
 Peace
 
+# How I use AI for this project
+I use it to research a scenario that I am hitting and help me with syntax, *never to write*, just to *tell me*.
+For example, I didn't know the syntax for creating relationships between entities in TypeORM, so I asked that, understood, then built.
+
+
+# Modeling
+
+I will keep it simple. Tenants have one store. A store has multiple products.
+
 
 # Issues I have been through while building this:
 
