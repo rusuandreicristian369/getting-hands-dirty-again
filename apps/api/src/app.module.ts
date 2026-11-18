@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
+import { ConfigModule, ConfigType } from '@nestjs/config';
 import { createObserveModule } from '@nestjs/observe';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigType } from '@nestjs/config';
 import appConfig from './app.config.js';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { Tenant } from './tenant/entities/tenant.entity.js';
+import { TenantModule } from './tenant/tenant.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -24,7 +26,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
           username: config.typeorm.username,
           database: config.typeorm.database,
           password: config.typeorm.password,
-          entities: [],
+          entities: [Tenant],
           synchronize: process.env.NODE_ENV !== 'production',
         };
       },
@@ -36,8 +38,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       serviceId: 'api',
       forwardLogs: true,
     }),
+    TenantModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

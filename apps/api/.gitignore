@@ -5,4 +5,4 @@
 node_modules/
 dist/
 
-tsconfig.build.tsbuildinfo
+./tsconfig.build.tsbuildinfo
