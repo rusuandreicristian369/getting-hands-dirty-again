@@ -16,6 +16,14 @@ const CONFIG = {
     }
 }
 
+function* batch(count: number) {
+    for (let done = 0; done < count; done += CONFIG.batchSize) {
+        const size = Math.min(CONFIG.batchSize, count - CONFIG.batchSize)
+
+        yield size
+    }
+}
+
 async function seed(app: INestApplicationContext) {
     const dataSource = app.get(DataSource)
 
@@ -27,15 +35,13 @@ async function seed(app: INestApplicationContext) {
         await dataSource.transaction(async (manager) => {
             logger.log("Creating tenants...")
 
-
-            for (let done = 0; done < CONFIG.tenants.count; done += CONFIG.batchSize) {
-                const size = Math.min(CONFIG.batchSize, CONFIG.tenants.count - CONFIG.batchSize)
-
+            for (const size of batch(CONFIG.tenants.count)) {
                 const tenants = new Array(size).fill(null).map(() => manager.create(Tenant, {
                     name: faker.person.fullName()
                 }))
                 await manager.insert(Tenant, tenants)
             }
+
 
         })
     })
