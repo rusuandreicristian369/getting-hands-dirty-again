@@ -12,13 +12,13 @@ const CONFIG = {
     batchSize: 10000,
 
     tenants: {
-        count: 1000000
+        count: 1000
     }
 }
 
 function* batch(count: number) {
     for (let done = 0; done < count; done += CONFIG.batchSize) {
-        const size = Math.min(CONFIG.batchSize, count - CONFIG.batchSize)
+        const size = Math.min(CONFIG.batchSize, Math.max(0, count - CONFIG.batchSize))
 
         yield size
     }
