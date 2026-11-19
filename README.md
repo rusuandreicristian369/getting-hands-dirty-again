@@ -19,6 +19,11 @@ For example, I didn't know the syntax for creating relationships between entitie
 
 I will keep it simple. Tenants have one store. A store has multiple products.
 
+The first thing I wanna implement is a lot of buyers requesting the same product, and making sure that only the first to request gets it, never two people (i.e. no race conditions).
+
+# Decisions
+
+When an order happens, I reserve the product and create an order. Reserving a product means I decrement the stock of that product, and by creating an order I also know where that stock is (in case the order fails, and I have to make the stock available again).
 
 # Issues I have been through while building this:
 

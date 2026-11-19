@@ -1,8 +1,8 @@
+import { Logger, StandardSchemaValidationPipe } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { AppModule, ObserveInstrument } from './app.module.js';
-import { ConfigService, ConfigType } from '@nestjs/config';
 import appConfig from './app.config.js';
-import { Logger } from '@nestjs/common';
+import { AppModule, ObserveInstrument } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -13,10 +13,14 @@ async function bootstrap() {
   const configService = app.get<ConfigType<typeof appConfig>>(appConfig.KEY);
   const logger = new Logger('bootstrap');
 
+  app.useGlobalPipes(new StandardSchemaValidationPipe())
+
+  app.enableShutdownHooks();
+
   await app.listen(configService.port, () => {
     logger.log(`Started listening on ${configService.port}`);
   });
 
-  app.enableShutdownHooks();
+
 }
 await bootstrap();

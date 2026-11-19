@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, } from "typeorm";
 import { Store } from "../../store/entities/store.entity.js";
 
 @Entity({ name: "products" })
@@ -12,4 +12,7 @@ export class Product {
     })
     @JoinColumn()
     store: Store
+
+    @Column({ type: "integer" })
+    stock: number;
 }

@@ -11,7 +11,4 @@ export class TenantService {
 
     }
 
-    async getAll() {
-        return this.repository.find()
-    }
 }

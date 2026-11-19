@@ -14,6 +14,6 @@ export class Store {
     @JoinColumn()
     tenant: Tenant
 
-    @OneToMany(() => Product, p => p.store)
+    @OneToMany(() => Product, p => p.store, { cascade: true })
     products: Product[]
 }

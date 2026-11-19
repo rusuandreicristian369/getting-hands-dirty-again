@@ -9,6 +9,6 @@ export class Tenant {
     @Column({ type: "varchar", length: 255 })
     name: string
 
-    @OneToOne(() => Store, s => s.tenant)
+    @OneToOne(() => Store, s => s.tenant, { cascade: true })
     store?: Store | null
 }

@@ -12,7 +12,11 @@ const CONFIG = {
     batchSize: 10000,
 
     tenants: {
-        count: 1000
+        count: 1
+    },
+
+    products: {
+        count: 1
     }
 }
 
@@ -38,8 +42,17 @@ async function seed(app: INestApplicationContext) {
             for (const size of batch(CONFIG.tenants.count)) {
                 const tenants = new Array(size).fill(null).map(() => manager.create(Tenant, {
                     name: faker.person.fullName(),
+                    store: {
+                        products: [
+                            {
+                                id: "b1f0c5c2-6f0e-4b43-9d5e-0d5a1c7f6a11",
+                                stock: 3
+                            }
+                        ]
+                    }
                 }))
-                await manager.insert(Tenant, tenants)
+
+                await manager.save(Tenant, tenants)
             }
 
 
@@ -100,4 +113,4 @@ async function bootstrap() {
     await app.close()
 }
 
-bootstrap()
+await bootstrap()
