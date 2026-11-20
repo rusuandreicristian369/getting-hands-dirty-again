@@ -40,3 +40,9 @@ AI is not acting like a senior even when you ask it to. I asked it to come with 
 
 # Right now:
 - I am aware that the way we test now is not the best, since these are e2e tests, you would need the database in a state where you're 100% sure you can arrive through e2e usage, right? But for now, I am raw inserting in the database. Will revisit this when I add logic for the rest.
+
+
+# Things I learned
+
+- I was thinking about how would things work if I were to add database *replicas*. I understood that replicas are helpful for the read part. The writes would still remain on the master node. So if reads become a bottleneck, and we want to scale reading or improve availability, having replicas can help with that.
+- But then I thought: what if the read is not the bottleneck, but writing? Then I understood that the solution would be to *shard* the database around some shard key (e.g. by tenant), essentially creating multiple *master* nodes for writing, and having replicas for each of them. Makes sense :)
