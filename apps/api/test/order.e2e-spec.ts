@@ -4,86 +4,73 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
+import { Order } from '../src/order/entities/order.entity.js';
 import { Product } from '../src/product/entities/product.entity.js';
 import { TestDatabaseService } from './support/test-database.service.js';
 
 describe('OrderController (e2e)', () => {
-  let app: INestApplication<App>;
+  const INSTANCES = 3;
+
+  let apps: INestApplication<App>[] = []
   let dataSource: DataSource;
   let databaseService: TestDatabaseService;
 
+  beforeAll(async () => {
+    for (let i = 0; i < INSTANCES; ++i) {
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [AppModule],
+        providers: [TestDatabaseService]
+      }).compile();
+
+      const app = moduleFixture.createNestApplication();
+      await app.init();
+
+      apps.push(app)
+    }
+  });
+
   beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-      providers: [TestDatabaseService]
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-    dataSource = app.get(DataSource)
-    databaseService = app.get(TestDatabaseService)
+    dataSource = apps[0].get(DataSource)
+    databaseService = apps[0].get(TestDatabaseService)
     await databaseService.clean()
-  });
-
-  it('can order when stock is ok', async () => {
-    await databaseService.factories.product.create({
-      stock: 1,
-    })
-
-    const [product] = await dataSource.manager.find(Product)
-
-    const agent = request(app.getHttpServer())
-
-    await agent.post('/order')
-      .send({
-        productId: product.id,
-        quantity: 1
-      })
-      .expect(201)
-  });
-
-  it('cannot order when stock is not ok', async () => {
-    await databaseService.factories.product.create({
-      stock: 1,
-    })
-
-    const [product] = await dataSource.manager.find(Product)
-
-    const agent = request(app.getHttpServer())
-
-    await agent.post('/order')
-      .send({
-        productId: product.id,
-        quantity: 2
-      })
-      .expect(422)
   })
 
-  it('does not oversell when multiple requests come in', async () => {
-    await databaseService.factories.product.create({
-      stock: 1,
-    })
-
-    const [product] = await dataSource.manager.find(Product)
-
-    const agent = request(app.getHttpServer())
-
-    const totalCount = 5000
-    const requests = new Array(totalCount).fill(null).map(() => agent.post("/order").send({
-      productId: product.id,
-      quantity: 1
-    }))
-
-    const responses = await Promise.all(requests)
-
-    const okCount = responses.filter(response => response.statusCode === 201).length
-    const notOkCount = responses.filter(response => response.statusCode === 422).length
-
-    expect(okCount).toEqual(1)
-    expect(notOkCount).toEqual(totalCount - 1)
-  })
-
-  afterEach(async () => {
-    await app.close();
+  afterAll(async () => {
+    return Promise.all(apps.map(app => app.close()))
   });
+
+  it.each(new Array(20).fill(null).map((_, idx) => idx))
+    ("Sells exactly the stock it has", async () => {
+      const stock = 10;
+      const buyers = 60;
+      const product = await databaseService.factories.product.create({
+        stock
+      })
+
+      const buyerRequests = new Array(buyers).fill(null).map((_, index) => {
+        const currentAppInstance = apps[index % INSTANCES]
+
+        return request(currentAppInstance.getHttpServer())
+          .post('/order')
+          .send({
+            productId: product.id,
+            quantity: 1
+          })
+      })
+
+      const buyerResponses = await Promise.all(buyerRequests)
+
+      // Database checks:
+      const productAfter = await dataSource.manager.findOneOrFail(Product, { where: { id: product.id } })
+      const orders = await dataSource.manager.find(Order, { where: { productId: product.id } })
+      const unitsSold = orders.reduce((prev, order) => prev + order.quantity, 0)
+
+      expect(productAfter.stock).toEqual(0) // all stock has been bought - no undersell, no oversell
+      expect(unitsSold).toEqual(stock) // check from the side of orders, too
+
+      // HTTP requests checks:
+      const statuses = buyerResponses.map(response => response.statusCode)
+      expect(statuses.filter(status => status === 201)).toHaveLength(unitsSold)
+      expect(statuses.filter(status => status === 422)).toHaveLength(buyers - unitsSold)
+    })
 });

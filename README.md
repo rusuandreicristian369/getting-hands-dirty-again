@@ -25,6 +25,9 @@ The first thing I wanna implement is a lot of buyers requesting the same product
 
 When an order happens, I reserve the product and create an order. Reserving a product means I decrement the stock of that product, and by creating an order I also know where that stock is (in case the order fails, and I have to make the stock available again).
 
+I have tested the e2e orders having just one instance of the application running, and it's fine. Next up is to test it having multiple processes of the node.js backend, to simulate a distributed system.
+*UPDATE*: I have updated the e2e test to use three instances of the back-end, and I tested sending requests to all three instances with a round-robin method, assessing there is still no overselling / underselling when in a distributed environment.
+
 # Issues I have been through while building this:
 
 1. When seeding, trying to insert 1 million rows at a time, I found out that TypeORM's `manager.save()` function does all the persistence checks (cascades, dependency sorting, insert/update by default, e.t.c.), and at such a volume, it throws a Maximum call stack size exceeded. Even with 100k there was an issue - speed - because `manager.save` sends one INSERT command per entity, which is slow.
