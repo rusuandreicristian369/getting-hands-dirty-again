@@ -1,4 +1,4 @@
-import { Logger, StandardSchemaValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import appConfig from './app.config.js';
@@ -12,8 +12,6 @@ async function bootstrap() {
 
   const configService = app.get<ConfigType<typeof appConfig>>(appConfig.KEY);
   const logger = new Logger('bootstrap');
-
-  app.useGlobalPipes(new StandardSchemaValidationPipe())
 
   app.enableShutdownHooks();
 

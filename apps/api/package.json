@@ -21,8 +21,8 @@
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
-    "db:seed": "nest build && node --env-file=.env dist/database/seed.js seed",
-    "db:clean": "nest build && node --env-file=.env dist/database/seed.js clean"
+    "db:seed": "nest build && node --env-file=.env dist/test/support/seed.js seed",
+    "db:clean": "nest build && node --env-file=.env dist/test/support/seed.js clean"
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
@@ -40,6 +40,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@jorgebodega/typeorm-factory": "^4.0.0",
     "@nestjs/cli": "^12.0.0",
     "@nestjs/mau": "^0.2.6",
     "@nestjs/schematics": "^12.0.0",
