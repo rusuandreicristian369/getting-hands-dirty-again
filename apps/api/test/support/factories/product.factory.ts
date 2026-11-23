@@ -14,6 +14,7 @@ export class ProductFactory extends Factory<Product> {
     protected attrs(): FactorizedAttrs<Product> {
         return {
             stock: faker.number.int({ min: 0, max: 500 }),
+            price: faker.number.int({ min: 0, max: 500 }),
             store: new SingleSubfactory(new StoreFactory(this.dataSource))
         }
     }

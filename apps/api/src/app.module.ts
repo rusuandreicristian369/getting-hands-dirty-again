@@ -1,49 +1,26 @@
 import { Module, StandardSchemaValidationPipe } from '@nestjs/common';
-import { ConfigModule, ConfigType } from '@nestjs/config';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { createObserveModule } from '@nestjs/observe';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PoolOptions } from 'mysql2';
-import appConfig from './app.config.js';
+import { OutboxModule } from '@nestjs/outbox';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { BuyerModule } from './buyer/buyer.module.js';
-import { Buyer } from './buyer/entities/buyer.entity.js';
+import { CoreModule } from './core/core.module.js';
 import { DomainFilter } from './errors/domain/domain.filter.js';
-import { Order } from './order/entities/order.entity.js';
 import { OrderModule } from './order/order.module.js';
-import { Product } from './product/entities/product.entity.js';
 import { ProductModule } from './product/product.module.js';
-import { Store } from './store/entities/store.entity.js';
 import { StoreModule } from './store/store.module.js';
-import { Tenant } from './tenant/entities/tenant.entity.js';
 import { TenantModule } from './tenant/tenant.module.js';
+import { PaymentModule } from './payment/payment.module.js';
+import { StripeWebhooksModule } from './stripe-webhooks/stripe-webhooks.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      envFilePath: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
-      load: [appConfig],
-    }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule.forFeature(appConfig)],
-      inject: [appConfig.KEY],
-      useFactory(config: ConfigType<typeof appConfig>) {
-        return {
-          type: config.typeorm.type,
-          host: config.typeorm.host,
-          port: config.typeorm.port,
-          username: config.typeorm.username,
-          database: config.typeorm.database,
-          password: config.typeorm.password,
-          entities: [Tenant, Store, Product, Order, Buyer],
-          synchronize: process.env.NODE_ENV !== 'production',
-          extra: {
-
-          } as PoolOptions
-        };
+    OutboxModule.forRoot({
+      relay: {
+        enabled: false,
       },
     }),
     ObserveModule.forRoot({
@@ -58,15 +35,21 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ProductModule,
     OrderModule,
     BuyerModule,
+    CoreModule,
+    PaymentModule,
+    StripeWebhooksModule,
   ],
   controllers: [AppController],
-  providers: [AppService, {
-    provide: APP_FILTER,
-    useClass: DomainFilter
-  },
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: DomainFilter,
+    },
     {
       provide: APP_PIPE,
-      useClass: StandardSchemaValidationPipe
-    }],
+      useClass: StandardSchemaValidationPipe,
+    },
+  ],
 })
-export class AppModule { }
+export class AppModule {}

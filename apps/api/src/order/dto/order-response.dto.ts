@@ -1,10 +1,9 @@
-import z from "zod";
+import z from 'zod';
 
 export const orderResponseSchema = z.object({
-    id: z.uuid(),
-    productId: z.uuid(),
-    quantity: z.int(),
-    createdAt: z.date(),
-})
+  id: z.uuid(),
+  expiresAt: z.date(),
+  checkoutUrl: z.url(),
+});
 
-export type OrderResponseDto = z.infer<typeof orderResponseSchema>
+export type OrderResponseDto = z.infer<typeof orderResponseSchema>;

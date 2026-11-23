@@ -11,7 +11,7 @@ import { TestDatabaseService } from './support/test-database.service.js';
 describe('OrderController (e2e)', () => {
   const INSTANCES = 3;
 
-  let apps: INestApplication<App>[] = []
+  let apps: INestApplication<App>[] = [];
   let dataSource: DataSource;
   let databaseService: TestDatabaseService;
 
@@ -19,58 +19,83 @@ describe('OrderController (e2e)', () => {
     for (let i = 0; i < INSTANCES; ++i) {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule],
-        providers: [TestDatabaseService]
+        providers: [TestDatabaseService],
       }).compile();
 
-      const app = moduleFixture.createNestApplication();
+      const app = moduleFixture.createNestApplication({ rawBody: true });
       await app.init();
 
-      apps.push(app)
+      apps.push(app);
     }
   });
 
   beforeEach(async () => {
-    dataSource = apps[0].get(DataSource)
-    databaseService = apps[0].get(TestDatabaseService)
-    await databaseService.clean()
-  })
-
-  afterAll(async () => {
-    return Promise.all(apps.map(app => app.close()))
+    dataSource = apps[0].get(DataSource);
+    databaseService = apps[0].get(TestDatabaseService);
+    await databaseService.clean();
   });
 
-  it.each(new Array(20).fill(null).map((_, idx) => idx))
-    ("Sells exactly the stock it has", async () => {
+  afterAll(async () => {
+    await databaseService.clean();
+    await Promise.all(apps.map((app) => app.close()));
+  });
+
+  it.skip('my test', async () => {
+    const product = await databaseService.factories.product.create({
+      stock: 1,
+    });
+
+    const req = await request(apps[0].getHttpServer()).post('/order').send({
+      productId: product.id,
+      quantity: 1,
+    });
+    console.log(req.statusCode);
+  });
+
+  it.each(Array.from({ length: 20 }).map((_, idx) => idx))(
+    'Sells exactly the stock it has',
+    async () => {
       const stock = 10;
       const buyers = 60;
       const product = await databaseService.factories.product.create({
-        stock
-      })
+        stock,
+        price: 1000, // Stripe won't work with less than $1!
+      });
 
-      const buyerRequests = new Array(buyers).fill(null).map((_, index) => {
-        const currentAppInstance = apps[index % INSTANCES]
+      const buyerRequests = Array.from({ length: buyers }).map((_, index) => {
+        const currentAppInstance = apps[index % INSTANCES];
 
-        return request(currentAppInstance.getHttpServer())
-          .post('/order')
-          .send({
-            productId: product.id,
-            quantity: 1
-          })
-      })
+        return request(currentAppInstance.getHttpServer()).post('/order').send({
+          productId: product.id,
+          quantity: 1,
+        });
+      });
 
-      const buyerResponses = await Promise.all(buyerRequests)
+      const buyerResponses = await Promise.all(buyerRequests);
 
       // Database checks:
-      const productAfter = await dataSource.manager.findOneOrFail(Product, { where: { id: product.id } })
-      const orders = await dataSource.manager.find(Order, { where: { productId: product.id } })
-      const unitsSold = orders.reduce((prev, order) => prev + order.quantity, 0)
+      const productAfter = await dataSource.manager.findOneOrFail(Product, {
+        where: { id: product.id },
+      });
+      const orders = await dataSource.manager.find(Order, {
+        where: { productId: product.id },
+      });
+      const unitsSold = orders.reduce(
+        (prev, order) => prev + order.quantity,
+        0,
+      );
 
-      expect(productAfter.stock).toEqual(0) // all stock has been bought - no undersell, no oversell
-      expect(unitsSold).toEqual(stock) // check from the side of orders, too
+      expect(productAfter.stock).toEqual(0); // all stock has been bought - no undersell, no oversell
+      expect(unitsSold).toEqual(stock); // check from the side of orders, too
 
       // HTTP requests checks:
-      const statuses = buyerResponses.map(response => response.statusCode)
-      expect(statuses.filter(status => status === 201)).toHaveLength(unitsSold)
-      expect(statuses.filter(status => status === 422)).toHaveLength(buyers - unitsSold)
-    })
+      const statuses = buyerResponses.map((response) => response.statusCode);
+      expect(statuses.filter((status) => status === 201)).toHaveLength(
+        unitsSold,
+      );
+      expect(statuses.filter((status) => status === 422)).toHaveLength(
+        buyers - unitsSold,
+      );
+    },
+  );
 });

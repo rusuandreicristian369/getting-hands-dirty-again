@@ -13,6 +13,9 @@ export class Product {
     @JoinColumn()
     store: Store
 
-    @Column({ type: "integer" })
+    @Column({ type: "integer", unsigned: true })
     stock: number;
+
+    @Column({ type: "integer", unsigned: true })
+    price: number;
 }
