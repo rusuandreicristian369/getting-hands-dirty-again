@@ -10,6 +10,9 @@ const envSchema = z.object({
   TYPEORM_DATABASE: z.string(),
   TYPEORM_USERNAME: z.string(),
   TYPEORM_PASSWORD: z.string(),
+
+  OBSERVE_APP_KEY: z.string(),
+  OBSERVE_APP_SECRET: z.string(),
 });
 
 const appConfig = registerAs('app', () => {
@@ -25,6 +28,11 @@ const appConfig = registerAs('app', () => {
       database: env.TYPEORM_DATABASE!,
       username: env.TYPEORM_USERNAME!,
       password: env.TYPEORM_PASSWORD!,
+    },
+
+    observe: {
+      key: env.OBSERVE_APP_KEY!,
+      secret: env.OBSERVE_APP_SECRET!,
     },
   };
 });

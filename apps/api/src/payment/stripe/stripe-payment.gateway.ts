@@ -61,16 +61,30 @@ export class StripePaymentGateway extends PaymentGateway {
   }
 
   async closeSession(sessionId: string): Promise<CloseSessionResponse> {
-    const session = await this.stripe.checkout.sessions.retrieve(sessionId);
-
-    if (session.status === 'complete') {
-      return 'paid';
-    }
-
-    if (session.status === 'open') {
+    try {
       await this.stripe.checkout.sessions.expire(sessionId);
-    }
 
-    return 'expired';
+      return 'expired';
+    } catch (err) {
+      // Means there was a 5xx / 429 error -> throw it back
+      if (!(err instanceof Stripe.errors.StripeInvalidRequestError)) {
+        throw err;
+      }
+
+      // The session was not open.
+
+      const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.status === 'complete') {
+        return session.payment_status === 'unpaid' ? 'expired' : 'paid';
+      }
+
+      if (session.status === 'expired') {
+        return 'expired';
+      }
+
+      // If it's still open, surface the error
+      throw err;
+    }
   }
 }

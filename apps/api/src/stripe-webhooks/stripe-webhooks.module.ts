@@ -7,6 +7,8 @@ import {
   StripeWebhooksController,
 } from './stripe-webhooks.controller.js';
 
+export const STRIPE_CONSUMER = `webhooks:${STRIPE_RECEIVER}`;
+
 @Module({
   imports: [
     WebhooksModule.forRootAsync({
@@ -20,6 +22,7 @@ import {
               scheme: 'stripe',
               secret: config.webhookSecret,
               dedupe: false,
+              consumer: STRIPE_CONSUMER,
             },
           },
         };

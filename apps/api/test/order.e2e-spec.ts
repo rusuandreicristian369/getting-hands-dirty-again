@@ -1,25 +1,37 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { StartedMySqlContainer } from '@testcontainers/mysql';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
 import { Order } from '../src/order/entities/order.entity.js';
+import { PaymentGateway } from '../src/payment/payment.gateway.js';
 import { Product } from '../src/product/entities/product.entity.js';
+import { createMysqlContainer } from './support/containers/create-mysql.container.js';
+import { FakePaymentGateway } from './support/fake-payment.gateway.js';
 import { TestDatabaseService } from './support/test-database.service.js';
 
 describe('OrderController (e2e)', () => {
   const INSTANCES = 3;
 
+  let sql: StartedMySqlContainer;
   let apps: INestApplication<App>[] = [];
   let dataSource: DataSource;
   let databaseService: TestDatabaseService;
 
   beforeAll(async () => {
+    sql = await createMysqlContainer();
     for (let i = 0; i < INSTANCES; ++i) {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule],
-        providers: [TestDatabaseService],
+        providers: [
+          TestDatabaseService,
+          {
+            provide: PaymentGateway,
+            useClass: FakePaymentGateway,
+          },
+        ],
       }).compile();
 
       const app = moduleFixture.createNestApplication({ rawBody: true });
@@ -38,18 +50,7 @@ describe('OrderController (e2e)', () => {
   afterAll(async () => {
     await databaseService.clean();
     await Promise.all(apps.map((app) => app.close()));
-  });
-
-  it.skip('my test', async () => {
-    const product = await databaseService.factories.product.create({
-      stock: 1,
-    });
-
-    const req = await request(apps[0].getHttpServer()).post('/order').send({
-      productId: product.id,
-      quantity: 1,
-    });
-    console.log(req.statusCode);
+    await sql.stop();
   });
 
   it.each(Array.from({ length: 20 }).map((_, idx) => idx))(

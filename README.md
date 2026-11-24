@@ -36,13 +36,15 @@ _UPDATE_: I have updated the e2e test to use three instances of the back-end, an
 
 For _async event processing_, I chose to implement an outbox, with the relayer as a different process, and rabbitmq for consuming the events. The reason is the environment (distributed), scalability and reliability.
 Since this is going to run on multiple node instances, we can't use in-memory events. Clear.
-The outbox is storing the events in the same database, in the same transaction where an action happens - so we know these two are tied - if an action happens, its event is also stored, or neither happens. Never out-of-sync.
+The outbox is storing the events in the same database, in the same transaction where an action happens - so we know these two are tied - if an action happens, its event is also stored, or neither happens. Never out-of-sync. This is the `dual-write` problem, solved.
 
 # Low-level decisions
 
 The configuration files use `registerAs` from `@nestjs/config` and schema validation from `zod`.
 
 I created a decorator to be used for writing `OnStripeEvent` and `OnMessage` - to have type safety on `topics` and the payloads expected, and to wrap the error handling in one place, instead of doing it in every method that used these decorators (i.e. see `parsePayload`). I thought that it's best to do so.
+
+I am using `dedupe: false` in the WebhooksModule because, by default, nest.js would handle the deduplication before running the handler. And in the handler, I am inserting the event in the database. If I would keep that to true, it would mean that a webhook event could be marked as `handled`, yet never arriving in the outbox. So I am handling this myself, in the controller - creating a transaction and either handling both the webook and the outbox write, or nothing.
 
 # Issues I have been through while building this:
 
@@ -63,6 +65,10 @@ So far, most of the work were my ideas + fable 5.2's code that I had to give bac
 
 When I created the decorators for `OnMessage` and `OnStripeEvent`, it suggested a handbook decorator, so to speak - copying every metadataKey on the new value, and so on. Ignoring the existence of `@nestjs/common` module that can easily do this with `applyDecorators` and `UsePipes`. Lol
 
+When writing tests for the orders lifecycle, it suggested to update the `clean` method in `TestDatabaseService` to also drop the tables from the outbox, that nest.js uses behind the scenes. I recognised that and I knew there has to be a better solution - what if a future update changes these names? You won't know where errors come from. After I asked to research the package, it realised it offers methods like `purgeDeadLetters({ all: true })` which does what we needed.
+
+And again, in the same scenario, it suggested to create a `TestBroker` class that would offer methods like `purgeQueues`, `deadLetters` (to read them, with manual parsing of headers to look for deaths count), e.t.c.. I instantly reasoned - why? I'm 99% sure there's something out there for that. It just didn't find it. It tried to convince me it's a good idea when I asked it why it exists. Then I turned him to research rabbitmq libraries for this, and it found a good solution - official `@testcontainers/rabbitmq` library. Took a while tho.
+
 # Right now:
 
 - I am aware that the way we test now is not the best, since these are e2e tests, you would need the database in a state where you're 100% sure you can arrive through e2e usage, right? But for now, I am raw inserting in the database. Will revisit this when I add logic for the rest.
@@ -71,3 +77,4 @@ When I created the decorators for `OnMessage` and `OnStripeEvent`, it suggested 
 
 - I was thinking about how would things work if I were to add database _replicas_. I understood that replicas are helpful for the read part. The writes would still remain on the master node. So if reads become a bottleneck, and we want to scale reading or improve availability, having replicas can help with that.
 - But then I thought: what if the read is not the bottleneck, but writing? Then I understood that the solution would be to _shard_ the database around some shard key (e.g. by tenant), essentially creating multiple _master_ nodes for writing, and having replicas for each of them. Makes sense :)
+- `TOCTOU`: I implemented `closeSession` in `StripePaymentGateway` by first retrieving the session, verifying its status and, if `open`, I would `expire` it. But what if when I retrieved it, it was `open`, and before I call `expire`, it already moved to `complete`? For this kind of scenarios, you should prefer `act-and-interpret`, rather than `check-then-act`. So simply try to expire the session and, if it works - then it's expired. If not, check the error, and handle that.

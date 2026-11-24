@@ -1,5 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { RelayModule } from './relay/relay.module.js';
+import { ObserveInstrument, RelayModule } from './relay/relay.module.js';
 
-const app = await NestFactory.createApplicationContext(RelayModule);
+const app = await NestFactory.createApplicationContext(RelayModule, {
+  instrument: ObserveInstrument,
+});
 app.enableShutdownHooks();
